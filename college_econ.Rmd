@@ -1,0 +1,79 @@
+---
+title: "College Economic Diversity"
+output: html_document
+date: "2024-09-10"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+library(tidyverse)
+```
+
+```{r}
+college_admissions <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2024/2024-09-10/college_admissions.csv')
+```
+
+```{r}
+college_admissions|>
+  select(name)|>
+  distinct()
+#gives the list of all colleges
+```
+
+
+```{r}
+college_admissions|>
+  filter(par_income_bin == 100) |>
+  select(attend)|>
+  summarize(sum(attend, na.rm = TRUE))
+  
+```
+
+```{r}
+college_admissions|>
+  filter(public == TRUE)|>
+  select(name)|>
+  distinct()
+
+#all public schools in the list
+```
+
+```{r}
+#attendance comparing public schools to private schools
+college_admissions|>
+  ggplot(aes(x=par_income_bin, y=attend, color=public))+
+  geom_point()+
+  geom_line(aes(group = name))+
+  geom_text(aes(label = ifelse(attend > .03, name, "")))
+  
+  #line represents one school, put label only for certain attend levels 
+```
+
+
+```{r}
+pomona<-
+  filter(college_admissions, name == "Pomona College")
+
+head(pomona)
+  #ggplot(aes(x=attend_sat, y=attend))+
+  
+```
+```{r}
+library(plotly)
+library(crosstalk)
+
+admiss<-SharedData$new(college_admissions, ~name)
+ggl<-admiss|>
+  ggplot(aes(x=par_income_bin, y = attend, color = public, 
+             text = paste0("school: ",name)))+
+  geom_point()+
+  geom_line()+
+  facet_grid(~ public)+
+  labs(color = "Public School", x="parental income bin", y="something about % attendance")
+
+gg2<-ggplotly(ggl, tooltip = "text")
+plotly::highlight(gg2, on="plotly_click")
+```
+

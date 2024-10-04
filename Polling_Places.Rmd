@@ -1,0 +1,55 @@
+---
+title: "TidyTuesday1"
+output: html_document
+date: "2024-01-23"
+---
+library(tidyverse)
+polling <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2024/2024-01-16/polling_places.csv')
+
+```{r}
+polling_places <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2024/2024-01-16/polling_places.csv')
+summary(polling_places)
+head(polling_places)
+plot(polling_places$)
+```
+
+```{r}
+#another way to load the csv file
+polling<-read_csv("polling_places.csv")|>
+  mutate(year = year(election_date), 
+       name=tolower(name),
+       address =tolower(address))
+```
+
+```{r}
+polling_places<-polling|>
+  mutate(location_type = case_when(
+    grepl("church", name)|grepl("church", address)~"church"
+    grepl("community center", name) | grepl("community center", address) ~ "community center",
+    grepl("fire", name) | grepl("fire", address) ~ "fire department",
+    
+    TRUE ~ "other"
+  
+  ))
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

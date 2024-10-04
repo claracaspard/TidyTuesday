@@ -1,0 +1,73 @@
+---
+title: "Heritage"
+output: html_document
+date: "2024-02-06"
+---
+```{r}
+library(tidyverse)
+library(praise)
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+heritage <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2024/2024-02-06/heritage.csv')
+heritage
+```
+
+```{r}
+ggplot(heritage, aes(x=country, y=y)) +
+  geom_point() + 
+  geom_segment( aes(x=x, xend=x, y=0, yend=y))
+```
+
+```{r}
+#lollipop plot
+heritage|>
+  ggplot(aes(y=`2004`, fill=country, color=country, x=country))+
+  geom_point()+
+  geom_segment(aes(x=country,xend=country, yend=`2004`), y=0)
+```
+
+```{r}
+heritage_long<-heritage|>
+  pivot_longer(`2004`:`2022`, names_to = "year", values_to="num_sites")
+heritage_long
+```
+
+```{r}
+#+ is only for plots (adding features to a plot) whereas |> is for everything else
+heritage_long<-heritage|>
+  mutate(percent=paste0(floor(100*((`2022`-`2004`) /`2004`)),"%"))|>
+  pivot_longer(`2004`:`2022`, names_to="year", values_to="num_sites")|>
+  mutate(year=as.numeric(year))|>
+  mutate(small_year = ifelse(year ==2004, "'04", "'22"))
+  
+heritage_long
+```
+
+```{r}
+heritage_long|>
+  ggplot(aes(y=num_sites, color=country, x=year))+
+  geom_point(size =2)+
+  geom_segment(aes(xend=year, yend=num_sites), y=0)+
+  geom_text(aes(label = percent),x=2013 ,y=-6, color="black")+
+  geom_text(aes(label = small_year, x=year), y=-2, color="gray")+
+  facet_wrap(~country)+
+  ylim(c(-10,20))+
+  xlim(c(1990,2035))+
+  ylab("")+
+  xlab("Country")+
+  theme(panel.background=element_blank(), axis.ticks.x = element_blank(), axis.text.x = element_blank(), axis.ticks.y = element_blank(), axis.text.y = element_blank(), strip.text.x=element_blank())+
+  geom_text(aes(label = num_sites, x=year, y=num_sites+3), color = "black")
+heritage_long
+```
+
+
+```{r}
+praise()
+```
+
+

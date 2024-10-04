@@ -1,0 +1,29 @@
+---
+title: "MoneyBall"
+output: html_document
+date: "2024-03-19"
+---
+```{r}
+library(tidyverse)
+```
+
+```{r}
+mutant_moneyball <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2024/2024-03-19/mutant_moneyball.csv')|>
+mutate(across(`60s_Appearance_Percent`::PPI60s_oStreet, parse_number))
+```
+
+```{r}
+mutant_moneyball|>
+  ggplot(aes(x=PPI70s_wiz, y = PPI70s_ebay))+
+  geom_point(aes(size = TotalIssues70s))+
+  geom_abline(intercept = 0, slope = 1) +
+  ggrepel::geom_label_repel(aes(label = Member))
+```
+```{r}
+longer<-pivot_longer(dat, cols=-1, names_pattern = "(.*)(\d\ds)(.*)",
+names_to=c("limit", "name"))%>%
+  mutate(limit=ifelse(limit=="","value",limit))
+```
+
+
+

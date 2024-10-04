@@ -1,0 +1,53 @@
+---
+title: "Groundhogs"
+output: html_document
+date: "2024-01-30"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+```{r}
+groundhogs <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2024/2024-01-30/groundhogs.csv')
+predictions <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2024/2024-01-30/predictions.csv')
+```
+
+```{r}
+predictions |>
+  #filter(id<=10)|>
+  drop_na(shadow)|>
+  group_by(id)|>
+  summarize(prop_true = mean(shadow, na.rm=TRUE), num_pred=n())|>
+  ggplot(aes(x=num_pred, y=prop_true)) + 
+  geom_point(size=2)
+  #geom_point(aes(size = num_pred))
+```
+#joining two data frames to have info about ID, lat/long
+```{r}
+location_pred<-predictions |>
+  #filter(id<=10)|>
+  drop_na(shadow)|>
+  group_by(id)|>
+  summarize(prop_true = mean(shadow, na.rm=TRUE), num_pred=n()) |>
+  mutate(half_pred = ifelse(prop_true>=0.5, TRUE, FALSE)) |>
+  full_join(groundhogs, by = "id")|>
+  mutate(groundhog = case_when(
+    type=="Groundhog"~"groundhog", #does the type variable equal Groundhog
+    grepl("groundhog", type, ignore.case = TRUE) ~ "groundhog related", #ignore case ignores whether G or g
+    TRUE ~ "not groundhog")) #everything else
+```
+
+```{r}
+states<-map_data("state")
+#from someone else, got state dataset
+
+ggplot(states) + 
+  geom_polygon(fill="white", colour = "black", 
+               aes(long, lat, group = group)) + 
+  geom_point(data = location_pred, 
+             aes(x = longitude, y = latitude, color = groundhog, size = num_pred))
+
+```
+
+

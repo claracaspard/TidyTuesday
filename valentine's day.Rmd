@@ -1,0 +1,98 @@
+---
+title: ''
+output: html_document
+date: "2024-02-13"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(ggplot2)
+library(tidyverse)
+```
+
+```{r}
+historical_spending <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2024/2024-02-13/historical_spending.csv')
+gifts_age <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2024/2024-02-13/gifts_age.csv')
+gifts_gender <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2024/2024-02-13/gifts_gender.csv')
+
+inflation<-c(1,1.032, 1.021, 1.015, 1.016, 1.001, 1.013, 1.021, 1.023, 1.018, 1.012, 1.047, 1.080)
+inflation_product<-cumprod(inflation)
+historical_spending<-historical_spending|>
+  cbind(inflation, inflation_product)|>
+  mutate(perperson_adj = PerPerson/inflation_product)
+```
+
+```{r}
+plot(historical_spending$Year, historical_spending$PerPerson)
+plot(historical_spending$Year, historical_spending$perperson_adj)
+```
+
+
+```{r}
+historical_spending|>
+  ggplot(aes(x=Year, y=perperson_adj))+
+  geom_point(color = "red")+
+  geom_point(aes(x=Year, y=PerPerson), color="magenta")
+```
+now we can talk about the line in @fig-inflation
+
+```{r}
+#| label: fig-inflation
+#| fig-cap: "Because the inflation adjusted spending isn't a flat line, it seems as though Valentine's Day spending is increasing faster than inflation."
+
+historical_spending|>
+  rename(no_adjustment=PerPerson, inflation_adjusted = perperson_adj)|>
+  pivot_longer(cols=c("no_adjustment", "inflation_adjusted"),
+               values_to="spending", 
+               names_to="adjustment")|>
+  ggplot(aes(x=Year, y=spending, color=adjustment))+
+  geom_point()+
+  geom_line()+
+  ylab("Valentine's Spending")+
+  scale_color_manual(values=c("red","magenta"))
+```
+```{r}
+gifts_gender|>
+  filter(Gender == "Women")|>
+  pivot_longer(cols = SpendingCelebrating:GiftCards,
+               names_to="type",
+               values_to="percent")|>
+  mutate(not_spend = 100-percent)|>
+  pivot_longer(cols = percent:not_spend, 
+               values_to = "percent",
+               names_to = "spend")|>
+  ggplot(aes(x=type, y=percent, fill = type, alpha = spend))+
+  geom_bar(stat = "identity")+
+  scale_alpha_manual(values=c(0,1))+
+  coord_polar(theta = "y")
+```
+
+
+```{r}
+library(ggplot2)
+ 
+# Create test data.
+data <- data.frame(
+  category=c("A", "B", "C"),
+  count=c(10, 60, 30)
+)
+ 
+# Compute percentages
+data$fraction = data$count / sum(data$count)
+
+# Compute the cumulative percentages (top of each rectangle)
+data$ymax = cumsum(data$fraction)
+
+# Compute the bottom of each rectangle
+data$ymin = c(0, head(data$ymax, n=-1))
+ 
+# Make the plot
+ggplot(data, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3, fill=category)) +
+     geom_rect() +
+     coord_polar(theta="y") + # Try to remove that to understand how the chart is built initially
+     xlim(c(2, 4)) # Try to remove that to see how to make a pie chart
+```
+

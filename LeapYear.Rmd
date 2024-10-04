@@ -1,0 +1,88 @@
+---
+title: "Leap Day"
+output: html_document
+date: "2024-02-27"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+library(babynames)
+library(tidyverse)
+```
+
+
+```{r}
+events <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2024/2024-02-27/events.csv')
+births <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2024/2024-02-27/births.csv')
+deaths <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2024/2024-02-27/deaths.csv')
+```
+
+```{r}
+babynames|>
+  filter(name=="Matthew" | name=="John" | name=="Clara")|>
+  ggplot(aes(x=year, y=n, color = name))+
+  geom_line(aes(lty = sex))
+```
+```{r}
+births<-births |>
+  separate(person, c("Fname", "Lname"))
+
+births
+```
+
+```{r}
+babynames|>
+  filter(name=="Clara", sex=="F")|>
+  ggplot(aes(x=year, y=n))+
+  geom_line()
+```
+
+```{r}
+babynames|>
+  filter(name=="Clara", sex=="F")
+```
+```{r}
+leap_names<-births|>
+  group_by(Fname)|>
+  summarize(count = n())|>
+  filter(count>=2)
+  #ungroup()
+
+leap_names
+
+leap_births<-babynames|>
+  filter(name %in% leap_names$Fname)|>
+  group_by(name, year)|>
+  mutate(diff = n-lag(n),#measures women minus men (only for M rows)
+         diff_plus = n - lead(n))|>#measures men minus women (only for F rows)
+  mutate(keep_sex = case_when(
+    n > abs(diff) ~ "M",
+    n > abs(diff_plus) ~ "F",
+    n < abs(diff) ~ "F",
+    n < abs(diff_plus) ~ "M",
+    TRUE ~ sex
+  ))|>
+  filter(sex == keep_sex)|>
+arrange(name)|>
+  ungroup()
+  
+
+leap_births
+
+leap_births|>
+  select(name, sex)|>
+  table()
+  
+```
+
+```{r}
+leap_births|>
+  ggplot(aes(x=year, y=n))+
+  geom_line(aes(color = name, lty = sex))+
+  geom_point(data = filter(births, Fname %in% leap_names$Fname),
+aes(color = Fname, x=year_birth), y=75000, size = 5)+
+  xlim(1880, 2020)
+```
+

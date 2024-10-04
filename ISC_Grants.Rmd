@@ -1,0 +1,97 @@
+---
+title: "ISC Grants"
+output: html_document
+date: "2024-02-20"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(tidytext)
+```
+
+
+```{r}
+isc_grants <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2024/2024-02-20/isc_grants.csv')|>
+  mutate(index = row_number())
+```
+
+```{r}
+bigrams<-isc_grants|>
+  #select(index, summary)|>
+  unnest_tokens(bigram, summary, token = "ngrams", n=2)|>
+  filter(!is.na(bigram))
+
+bigrams|>
+  count(bigram, sort = TRUE)
+
+#filters out rows where first or second word are in the stop words list (this list exists in tidy text)
+bigram_isc<-bigrams|>
+  group_by(group)|>
+  separate(bigram, c("word1", "word2"), sep = " ")|>
+  filter(!word1 %in% stop_words$word) |>
+  filter(!word2 %in% stop_words$word)|>
+  count(word1, word2, sort = TRUE)|>
+  filter(n>3)|>
+  unite(bigram, word1, word2, sep = " ") #makes it into 1 column to make more visually appealing
+```
+
+```{r}
+bigram_isc
+tf_idf<-bigram_isc|>
+  count(group, bigram)|>
+  bind_tf_idf(bigram, group, n) |>
+  arrange(desc(tf_idf))
+tf_idf
+```
+
+
+```{r}
+tf_idf|>
+  arrange(desc(tf_idf))|>
+  group_by(group)|>
+  slice_max(tf_idf, n=5)|> #take top 5 of each group
+  ungroup()|>
+  mutate(bigram = reorder(bigram, tf_idf))|>
+  ggplot(aes(x=tf_idf, y=bigram, fill = as.factor(group)))+
+  geom_col(show.legend = FALSE)+
+  facet_wrap(~group, ncol = 2, scales = "free")+
+  ylab(" ")
+```
+
+
+```{r}
+#filtering to check for typos, if they repeat a word. Does not separate 
+bigrams|>
+  separate(bigram, c("word1", "word2"), sep = " ")|>
+  filter(word1==word2)
+```
+
+
+```{r}
+isc_grants|>
+  group_by(proposed_by)|>
+  mutate(n_proposal = n())|>
+  filter(n_proposal>1)|>
+#  ungroup()|>
+  ggplot(aes(x=year, y=funded, color = proposed_by))+
+  geom_point()+
+  geom_jitter(width = 0.1)
+```
+```{r}
+#| fig-cap: seems like there has been less funding over tie, although 2018 is also quite an outlier # #| with a few very large grants
+#|fig-alt: Year is on the x axis and funding amount is on the y axis.
+isc_grants|>
+  group_by(year)|>
+  mutate(total = sum(funded))|> 
+  ggplot(aes(x=year, y=funded))+
+  geom_point()+
+  geom_jitter(width = 0.1)+
+  geom_line(aes(y=total))
+```
+
+
+
