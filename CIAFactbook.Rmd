@@ -1,0 +1,89 @@
+---
+title: "CIA World Factbook"
+output: html_document
+date: "2024-10-22"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# Data Import and Wrangling Tools
+library(tidyverse)            # All things tidy
+library(janitor)              # Cleaning names etc.
+library(here)                 # Root Directory Management
+
+# Final plot tools
+library(scales)               # Nice Scales for ggplot2
+library(fontawesome)          # Icons display in ggplot2
+library(ggtext)               # Markdown text support for ggplot2
+library(maps)
+#library(showtext)             # Display fonts in ggplot2
+#library(colorspace)           # Lighten and Darken colours
+#library(patchwork)            # Combining plots
+#library(cartogram)            # Cartogram maps in R
+#library(sf)  
+```
+
+
+```{r}
+cia <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2024/2024-10-22/cia_factbook.csv')|>
+  mutate(iso_a3 = countrycode::countrycode(
+    country,
+    origin = "country.name",
+    destination = "iso3c"
+  ))|>
+  drop_na(iso_a3)
+
+```
+
+```{r}
+world_data<-map_data("world")|>
+  mutate(iso_a3 = countrycode::countrycode(
+    region,
+    origin = "country.name",
+    destination = "iso3c"
+  ))|>
+  drop_na(iso_a3)
+```
+
+```{r}
+data_for_map<-world_data|>
+  left_join(cia, by = "iso_a3")
+```
+
+
+```{r}
+data_for_map|>
+  ggplot(aes(x = long, y = lat, group = group))+
+  geom_polygon(aes(fill = infant_mortality_rate)) + 
+  theme_void()
+
+data_for_map|>
+  ggplot(aes(x = long, y = lat, group = group))+
+  geom_polygon(aes(fill = internet_users)) + 
+  theme_void()
+```
+
+
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
